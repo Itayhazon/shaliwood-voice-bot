@@ -6,7 +6,7 @@ import telegram
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, filters
 
-print(">>> TELEGRAM MODULE LOCATION:", telegram.__file__)
+print(">>> TELEGRAM VERSION:", telegram.__version__)
 
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
