@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "shaliwood-voice-bot"
+version = "0.1.0"
+description = "A Telegram voice bot"
+authors = ["Your Name <your.email@example.com>"]
+readme = "README.md"
+packages = [{include = "shaliwood_voice_bot", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+python-telegram-bot = "20.7"
+openai = "^1.12.0"
+python-dotenv = "^1.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api" 
