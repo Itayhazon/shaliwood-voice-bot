@@ -1,15 +1,16 @@
+"""
+Main application module for Shaliwood Voice Bot.
+Orchestrates the bot components and provides the main application loop.
+"""
 import logging
-import tempfile
-from openai import OpenAI
-import telegram
-from telegram import Update
-from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, filters
-from .config import TELEGRAM_TOKEN, OPENAI_API_KEY, ConfigError, LOG_LEVEL
-
-print(">>> TELEGRAM VERSION:", telegram.__version__)
-
-# Configure OpenAI
-client = OpenAI(api_key=OPENAI_API_KEY)
+import sys
+import argparse
+from .config import LOG_LEVEL, ConfigError
+from .voice_processor import VoiceProcessor
+from .data_manager import DataManager
+from .response_formatter import ResponseFormatter
+from .telegram_bot import TelegramBot
+from .local_processor import LocalProcessor
 
 # Configure logging
 logging.basicConfig(
@@ -18,40 +19,70 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-async def handle_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    try:
-        voice = update.message.voice
-        file = await context.bot.get_file(voice.file_id)
 
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".ogg") as temp_audio:
-            await file.download_to_drive(temp_audio.name)
+class ShaliwoodBot:
+    """Main bot application that orchestrates all components."""
+    
+    def __init__(self, disable_sheets: bool = False):
+        """Initialize the bot application."""
+        self.voice_processor = VoiceProcessor()
+        self.data_manager = DataManager(disable_sheets=disable_sheets)
+        self.response_formatter = ResponseFormatter()
+        self.telegram_bot = TelegramBot(self.voice_processor, self.data_manager, self.response_formatter)
+        self.local_processor = LocalProcessor(self.voice_processor, self.data_manager, self.response_formatter)
+    
+    def run_telegram_bot(self):
+        """Run the Telegram bot."""
+        logger.info("Starting Telegram bot...")
+        self.telegram_bot.run()
+    
+    def process_local_file(self, audio_file_path: str, transcribe_only: bool = False, output_file: str = None):
+        """Process a local audio file."""
+        logger.info(f"Processing local file: {audio_file_path}")
+        success = self.local_processor.process_audio_file(
+            audio_file_path, transcribe_only=transcribe_only, output_file=output_file
+        )
+        return success
 
-            with open(temp_audio.name, "rb") as audio_file:
-                transcript = client.audio.transcriptions.create(
-                    model="whisper-1",
-                    file=audio_file,
-                    language="he"  # Specify Hebrew language for better transcription
-                )
-
-            text = transcript.text
-            await update.message.reply_text(f"הטקסט שזוהה:\n{text}")
-
-    except Exception as e:
-        logger.error(f"שגיאה בעיבוד ההקלטה: {e}")
-        await update.message.reply_text(f"אירעה שגיאה בעיבוד ההקלטה:\n{e}")
 
 def main():
+    """Main entry point with support for local file processing."""
+    parser = argparse.ArgumentParser(description='Shaliwood Voice Bot')
+    parser.add_argument('--file', '-f', type=str, help='Process a local audio file instead of running the bot')
+    parser.add_argument('--no-sheets', action='store_true', help='Skip Google Sheets integration for testing')
+    parser.add_argument('--transcribe-only', action='store_true', help='Only transcribe audio, skip data extraction')
+    parser.add_argument('--output', '-o', type=str, help='Save transcription to file')
+    
+    args = parser.parse_args()
+    
     try:
-        app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
-        app.add_handler(MessageHandler(filters.VOICE, handle_voice))
-        logger.info("Starting bot...")
-        app.run_polling()
+        bot = ShaliwoodBot(disable_sheets=args.no_sheets)
+        
+        if args.file:
+            # Process local audio file
+            print(f"🎵 Processing local audio file: {args.file}")
+            success = bot.process_local_file(
+                args.file, transcribe_only=args.transcribe_only, output_file=args.output
+            )
+            if success:
+                print("✅ Processing completed successfully!")
+            else:
+                print("❌ Processing failed!")
+                sys.exit(1)
+        else:
+            # Run the Telegram bot
+            bot.run_telegram_bot()
+            
     except ConfigError as e:
         logger.error(f"Configuration error: {e}")
-        raise
+        sys.exit(1)
+    except KeyboardInterrupt:
+        logger.info("Application stopped by user")
+        sys.exit(0)
     except Exception as e:
         logger.error(f"Unexpected error: {e}")
-        raise
+        sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

@@ -51,5 +51,13 @@ load_config()
 TELEGRAM_TOKEN = get_required_env('TELEGRAM_TOKEN')
 OPENAI_API_KEY = get_required_env('OPENAI_API_KEY')
 
+# Google Sheets configuration
+GOOGLE_SHEETS_CREDENTIALS_FILE = get_optional_env('GOOGLE_SHEETS_CREDENTIALS_FILE', 'credentials.json')
+SPREADSHEET_ID = get_required_env('SPREADSHEET_ID')
+
 # Optional environment variables
-LOG_LEVEL = get_optional_env('LOG_LEVEL', 'INFO') 
+LOG_LEVEL = get_optional_env('LOG_LEVEL', 'INFO')
+
+# Voice message saving configuration
+SAVE_VOICE_MESSAGES = get_optional_env('SAVE_VOICE_MESSAGES', 'false').lower() == 'true'
+VOICE_SAVE_DIR = get_optional_env('VOICE_SAVE_DIR', 'voice_messages') 
