@@ -85,9 +85,14 @@ class TelegramBot:
         """Handle workday data processing and response."""
         if workday_data:
             try:
+                # Get reference date from the message
+                reference_date = None
+                if update.message and update.message.date:
+                    reference_date = update.message.date.strftime('%d/%m/%Y')
+                
                 # Try to save to sheets
                 sheets_available = self.data_manager.is_sheets_available()
-                sheets_saved = self.data_manager.save_workday_data(workday_data, raw_transcription)
+                sheets_saved = self.data_manager.save_workday_data(workday_data, raw_transcription, recording_date=reference_date)
                 
                 # Format and send the complete response with all extracted information
                 message = self.response_formatter.format_complete_workday_data(

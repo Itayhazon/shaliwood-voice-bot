@@ -63,7 +63,7 @@ class LocalProcessor:
                 return True
             
             # Handle workday data
-            self._handle_workday_data(workday_data, text)
+            self._handle_workday_data(workday_data, text, reference_date)
             
             return True
                 
@@ -82,13 +82,13 @@ class LocalProcessor:
             logger.error(f"Failed to save transcription to file: {e}")
             print(f"❌ Failed to save transcription to file: {e}")
     
-    def _handle_workday_data(self, workday_data: dict, raw_transcription: str = None):
+    def _handle_workday_data(self, workday_data: dict, raw_transcription: str = None, recording_date: str = None):
         """Handle workday data processing and display."""
         if workday_data:
             try:
                 # Try to save to sheets
                 sheets_available = self.data_manager.is_sheets_available()
-                sheets_saved = self.data_manager.save_workday_data(workday_data, raw_transcription)
+                sheets_saved = self.data_manager.save_workday_data(workday_data, raw_transcription, recording_date=recording_date)
                 
                 # Format Hebrew data for console display
                 formatted_data = format_hebrew_data_for_console(workday_data)

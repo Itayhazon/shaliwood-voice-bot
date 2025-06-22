@@ -21,6 +21,7 @@ SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 HEBREW_COLUMNS = {
     'day': 'יום',
     'date': 'תאריך',
+    'recording_date': 'תאריך הקלטה',
     'start_time': 'שעת התחלה',
     'end_time': 'שעת סיום',
     'project_name': 'שם הפרויקט',
@@ -81,12 +82,12 @@ class GoogleSheetsManager:
             # Check if headers already exist
             result = self.service.spreadsheets().values().get(
                 spreadsheetId=SPREADSHEET_ID,
-                range='A1:K1'
+                range='A1:L1'
             ).execute()
             
             values = result.get('values', [])
             
-            if not values or len(values[0]) < 11:
+            if not values or len(values[0]) < 12:
                 # Headers don't exist or are incomplete, add them
                 headers = list(HEBREW_COLUMNS.values())
                 body = {
@@ -95,7 +96,7 @@ class GoogleSheetsManager:
                 
                 self.service.spreadsheets().values().update(
                     spreadsheetId=SPREADSHEET_ID,
-                    range='A1:K1',
+                    range='A1:L1',
                     valueInputOption='RAW',
                     body=body
                 ).execute()
@@ -132,6 +133,7 @@ class GoogleSheetsManager:
             row_data = [
                 workday_data.get('day', ''),
                 workday_data.get('date', ''),
+                workday_data.get('recording_date', ''),
                 workday_data.get('start_time', ''),
                 workday_data.get('end_time', ''),
                 workday_data.get('project_name', ''),
@@ -159,7 +161,7 @@ class GoogleSheetsManager:
             
             self.service.spreadsheets().values().update(
                 spreadsheetId=SPREADSHEET_ID,
-                range=f'A{next_row}:K{next_row}',
+                range=f'A{next_row}:L{next_row}',
                 valueInputOption='RAW',
                 body=body
             ).execute()

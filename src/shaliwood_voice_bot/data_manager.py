@@ -25,13 +25,14 @@ class DataManager:
         else:
             logger.info("Google Sheets disabled for testing")
     
-    def save_workday_data(self, workday_data: dict, raw_transcription: str = None) -> bool:
+    def save_workday_data(self, workday_data: dict, raw_transcription: str = None, recording_date: str = None) -> bool:
         """
         Save workday data to Google Sheets.
         
         Args:
             workday_data: Dictionary containing extracted workday information
             raw_transcription: Raw transcription text (optional)
+            recording_date: Date when the voice message was recorded (optional)
         """
         if not self.sheets_manager or not workday_data:
             return False
@@ -43,6 +44,10 @@ class DataManager:
             # Add raw transcription if provided
             if raw_transcription:
                 enriched_data['raw_transcription'] = raw_transcription
+            
+            # Add recording date if provided
+            if recording_date:
+                enriched_data['recording_date'] = recording_date
             
             # Add default status
             enriched_data['status'] = '⏳ ממתין לאישור'
