@@ -52,6 +52,9 @@ class WorkdayDataExtractor:
             # Use current date as fallback if no reference date provided
             if not reference_date:
                 reference_date = datetime.now().strftime('%d/%m/%Y')
+                logger.info(f"No reference date provided, using current date: {reference_date}")
+            else:
+                logger.info(f"Using provided reference date for extraction: {reference_date}")
             
             # Create a prompt for OpenAI to extract structured data
             prompt = self._create_extraction_prompt(transcribed_text, reference_date)
@@ -109,13 +112,13 @@ class WorkdayDataExtractor:
         Reference date: {reference_date} (in DD/MM/YYYY format)
 
         Use the reference date to resolve relative expressions like "אתמול" or "היום".  
+        
         Extract only information that is explicitly stated or can be clearly inferred.  
         Do not guess or fill in missing details. If a field is not present, leave it as an empty string ("")
 
         Return your output as a JSON object with the following fields:
         {{
-            "day": "",                // Day of the week in Hebrew (e.g. "ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת")
-            "date": "",               // Date in format DD/MM/YYYY
+            "date": "",               // Date in format DD/MM/YYYY — must match the given date
             "start_time": "",         // Start time in HH:MM (24-hour format)
             "end_time": "",           // End time in HH:MM (24-hour format) 
             "project_name": "",       // Main project name
@@ -193,15 +196,11 @@ class WorkdayDataExtractor:
         if cleaned_data['end_time']:
             cleaned_data['end_time'] = self._format_time(cleaned_data['end_time'])
         
-        # If day is not provided, try to extract from date
-        if not cleaned_data['day'] and cleaned_data['date']:
-            try:
-                date_obj = datetime.strptime(cleaned_data['date'], '%d/%m/%Y')
-                hebrew_days = ['שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת', 'ראשון']
-                cleaned_data['day'] = hebrew_days[date_obj.weekday()]
-            except:
-                pass
-        
+        # Extract day from date
+        date_obj = datetime.strptime(cleaned_data['date'], '%d/%m/%Y')
+        hebrew_days = ['שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת', 'ראשון']
+        cleaned_data['day'] = hebrew_days[date_obj.weekday()]
+
         return cleaned_data
     
     def _format_date(self, date_str: str) -> str:

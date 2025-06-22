@@ -94,7 +94,7 @@ class TelegramBot:
                 await update.message.reply_text(message)
                 
             except Exception as e:
-                logger.error(f"Data processing failed: {e}")
+                logger.warning(f"Data processing failed: {e}")
                 await update.message.reply_text(f"שגיאה בעיבוד המידע: {str(e)}")
         else:
             await update.message.reply_text("⚠️ מערכת חילוץ המידע לא זמינה")
