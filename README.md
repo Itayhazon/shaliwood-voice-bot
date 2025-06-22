@@ -31,8 +31,10 @@ The bot extracts the following information from voice messages:
 | work_description | תיאור העבודה | Detailed work description |
 | workers | עובדים | Workers who worked today |
 | additional_notes | הערות נוספות | Additional notes or issues |
+| raw_transcription | תמלול גולמי | Raw transcription of the voice message (added by business layer) |
+| status | סטטוס | Approval status (default: "⏳ ממתין לאישור" - Pending approval, added by business layer) |
 
-## 🏛️ Project Structure
+## 🎯 Project Structure
 
 ```
 shaliwood-voice-bot/
@@ -161,11 +163,13 @@ python -m src.shaliwood_voice_bot.main --file path/to/audio.ogg --transcribe-onl
 
 ## 💾 Voice Message Saving
 
-For testing and debugging purposes, you can enable voice message saving:
+For testing and debugging purposes, you can enable voice message saving **for Telegram messages only**:
 
 1. **Enable the feature** by setting `SAVE_VOICE_MESSAGES=true` in your `.env` file
 2. **Configure save directory** by setting `VOICE_SAVE_DIR=your_directory` (default: `voice_messages`)
 3. **Voice files will be saved** with timestamps and user IDs for easy identification
+
+**Note:** Voice message saving does **not** apply to local file processing. When processing local audio files (using the LocalProcessor or CLI), no additional copies are created, regardless of the `SAVE_VOICE_MESSAGES` setting. This prevents redundant or unnecessary file duplication during local testing.
 
 **File naming format**: `voice_{user_id}_{timestamp}.ogg`
 
