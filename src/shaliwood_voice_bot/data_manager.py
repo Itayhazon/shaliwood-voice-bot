@@ -25,16 +25,32 @@ class DataManager:
         else:
             logger.info("Google Sheets disabled for testing")
     
-    def save_workday_data(self, workday_data: dict) -> bool:
-        """Save workday data to Google Sheets."""
+    def save_workday_data(self, workday_data: dict, raw_transcription: str = None) -> bool:
+        """
+        Save workday data to Google Sheets.
+        
+        Args:
+            workday_data: Dictionary containing extracted workday information
+            raw_transcription: Raw transcription text (optional)
+        """
         if not self.sheets_manager or not workday_data:
             return False
         
         try:
-            success = self.sheets_manager.add_workday_summary(workday_data)
+            # Enrich workday data with business-specific fields
+            enriched_data = workday_data.copy()
+            
+            # Add raw transcription if provided
+            if raw_transcription:
+                enriched_data['raw_transcription'] = raw_transcription
+            
+            # Add default status
+            enriched_data['status'] = '⏳ ממתין לאישור'
+            
+            success = self.sheets_manager.add_workday_summary(enriched_data)
             return success
         except Exception as e:
-            logger.error(f"Failed to save to sheets: {e}")
+            logger.warning(f"Failed to save to sheets: {e}")
             return False
     
     def is_sheets_available(self) -> bool:

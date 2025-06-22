@@ -71,7 +71,7 @@ class WorkdayDataExtractor:
                         "content": prompt
                     }
                 ],
-                temperature=0.1,
+                temperature=0.0,
                 max_tokens=1000
             )
 
@@ -113,8 +113,37 @@ class WorkdayDataExtractor:
 
         Use the reference date to resolve relative expressions like "אתמול" or "היום".  
         
+        The text may include **relative time expressions** such as:
+        - "היום" (today)
+        - "אתמול" (yesterday)
+        - "מחר" (tomorrow)
+        - "שלשום" or "לפני יומיים" (the day before yesterday)
+        - "לפני שלושה ימים" (three days ago)
+
+        You must resolve these expressions based on the provided reference date.  
+        For example, if the reference date is `"21/06/2025"`, then:
+        - "היום" → `21/06/2025`
+        - "אתמול" → `20/06/2025`
+        - "שלשום" / "לפני יומיים" → `19/06/2025`
+        - "לפני שלושה ימים" → `18/06/2025`
+        If the text includes expressions like "לפני X ימים", subtract X days from the reference date to get the actual date.
+        
         Extract only information that is explicitly stated or can be clearly inferred.  
         Do not guess or fill in missing details. If a field is not present, leave it as an empty string ("")
+
+        🟢 **Special rule regarding Itay (איתי):**  
+        This text is the transcription of a voice message recorded by **Itay (איתי)**, the company's site manager, who is usually present and working on-site.
+        Whenever the text uses the word **"אני" (I)**, it refers to **Itay** himself.
+
+        If the text says anything that indicates **Itay was not present** — for example:  
+        - "אני לא הייתי שם"  
+        - "לא הגעתי היום"  
+        - "שלחתי את העובדים לבד"  
+        then you must **exclude Itay from the workers list**.
+
+        Otherwise, include "איתי" by default.
+        Since this message was recorded by Itay himself, you must assume that **he was present and working on-site**, unless he clearly says that he was not.  
+        Therefore, include `"איתי"` in the `workers` field unless his absence is explicitly mentioned.
 
         Return your output as a JSON object with the following fields:
         {{
@@ -132,6 +161,7 @@ class WorkdayDataExtractor:
         Important:
         - Return only the JSON object. No explanations, no formatting, no extra text.
         - All field values must be in Hebrew. Do not translate or transliterate anything to English.
+        - Always include "איתי" in the workers field unless it is explicitly said he was not present.
         """
     
     def _parse_json_response(self, content: str) -> Dict[str, Any]:

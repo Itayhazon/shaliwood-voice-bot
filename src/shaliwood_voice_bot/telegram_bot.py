@@ -6,8 +6,9 @@ import logging
 import tempfile
 import os
 from telegram import Update
-from telegram.ext import Application, MessageHandler, filters, ContextTypes
+from telegram.ext import Application, MessageHandler, filters, ContextTypes, CommandHandler
 from .config import TELEGRAM_TOKEN
+from .config import SAVE_VOICE_MESSAGES
 from .voice_processor import VoiceProcessor
 from .data_manager import DataManager
 from .response_formatter import ResponseFormatter
@@ -52,9 +53,10 @@ class TelegramBot:
             logger.info(f"Voice file downloaded: {temp_file_path}")
             
             # Process audio using voice processor
+            # Only save voice messages if SAVE_VOICE_MESSAGES is enabled
             user_info = {'user_id': update.message.from_user.id if update.message.from_user else 'unknown'}
             success, text, workday_data = self.voice_processor.process_audio(
-                temp_file_path, user_info, save_for_testing=True, reference_date=reference_date
+                temp_file_path, user_info, save_for_testing=SAVE_VOICE_MESSAGES, reference_date=reference_date
             )
             
             if not success:
@@ -65,7 +67,7 @@ class TelegramBot:
             await update.message.reply_text(f"הטקסט שזוהה:\n{text}")
             
             # Handle workday data
-            await self._handle_workday_data(update, workday_data)
+            await self._handle_workday_data(update, workday_data, text)
                 
         except Exception as e:
             logger.error(f"Error processing voice message: {e}")
@@ -79,16 +81,16 @@ class TelegramBot:
                 except Exception as e:
                     logger.warning(f"Failed to clean up temporary file: {e}")
     
-    async def _handle_workday_data(self, update: Update, workday_data: dict):
+    async def _handle_workday_data(self, update: Update, workday_data: dict, raw_transcription: str = None):
         """Handle workday data processing and response."""
         if workday_data:
             try:
                 # Try to save to sheets
                 sheets_available = self.data_manager.is_sheets_available()
-                sheets_saved = self.data_manager.save_workday_data(workday_data)
+                sheets_saved = self.data_manager.save_workday_data(workday_data, raw_transcription)
                 
-                # Format and send the response message
-                message = self.response_formatter.format_workday_summary(
+                # Format and send the complete response with all extracted information
+                message = self.response_formatter.format_complete_workday_data(
                     workday_data, sheets_available, sheets_saved
                 )
                 await update.message.reply_text(message)
@@ -99,11 +101,67 @@ class TelegramBot:
         else:
             await update.message.reply_text("⚠️ מערכת חילוץ המידע לא זמינה")
     
+    async def handle_text_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle incoming text messages from Telegram."""
+        try:
+            if not update.message or not update.message.text:
+                return
+            
+            text = update.message.text.strip()
+            
+            # Handle commands
+            if text.lower() in ['/help', '/start', 'help', 'עזרה', 'התחלה']:
+                await self._handle_help(update)
+            else:
+                await update.message.reply_text("שלח הקלטת קול כדי להוסיף נתוני עבודה")
+                
+        except Exception as e:
+            logger.error(f"Error processing text message: {e}")
+            await update.message.reply_text(f"שגיאה בעיבוד ההודעה: {str(e)}")
+    
+    async def _handle_help(self, update: Update):
+        """Handle help command."""
+        help_text = """
+🤖 Shaliwood Voice Bot - עזרה
+
+📝 איך להשתמש:
+• שלח הקלטת קול עם תיאור יום העבודה
+• הבוט יחלץ את המידע ויוסיף אותו לגיליון האלקטרוני
+• הבוט יציג את כל הנתונים השמורים בגיליון בתגובה
+
+🎤 פקודות זמינות:
+• /help - הצגת עזרה זו
+        """
+        await update.message.reply_text(help_text)
+    
     def setup_handlers(self):
         """Setup message handlers."""
         self.application.add_handler(
             MessageHandler(filters.VOICE, self.handle_voice_message)
         )
+        self.application.add_handler(
+            MessageHandler(filters.TEXT, self.handle_text_message)
+        )
+        self.application.add_handler(
+            CommandHandler("start", self._handle_start)
+        )
+    
+    async def _handle_start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle /start command - welcome message."""
+        welcome_text = """
+🤖 ברוכים הבאים ל-Shaliwood Voice Bot!
+
+🎤 איך להשתמש בבוט:
+• שלח הקלטת קול עם תיאור יום העבודה שלך
+• הבוט יחלץ את המידע ויוסיף אותו לגיליון האלקטרוני
+• הבוט יציג את כל הנתונים השמורים בגיליון בתגובה
+
+📊 מידע נוסף:
+• השתמש בפקודה /help לקבלת עזרה
+
+🚀 התחל על ידי שליחת הקלטת קול!
+        """
+        await update.message.reply_text(welcome_text)
     
     def run(self):
         """Run the Telegram bot."""

@@ -27,7 +27,9 @@ HEBREW_COLUMNS = {
     'sub_project': 'תת פרויקט',
     'work_description': 'תיאור העבודה',
     'workers': 'עובדים',
-    'additional_notes': 'הערות נוספות'
+    'additional_notes': 'הערות נוספות',
+    'raw_transcription': 'תמלול גולמי',
+    'status': 'סטטוס'
 }
 
 class GoogleSheetsManager:
@@ -79,12 +81,12 @@ class GoogleSheetsManager:
             # Check if headers already exist
             result = self.service.spreadsheets().values().get(
                 spreadsheetId=SPREADSHEET_ID,
-                range='A1:I1'
+                range='A1:K1'
             ).execute()
             
             values = result.get('values', [])
             
-            if not values or len(values[0]) < 9:
+            if not values or len(values[0]) < 11:
                 # Headers don't exist or are incomplete, add them
                 headers = list(HEBREW_COLUMNS.values())
                 body = {
@@ -93,7 +95,7 @@ class GoogleSheetsManager:
                 
                 self.service.spreadsheets().values().update(
                     spreadsheetId=SPREADSHEET_ID,
-                    range='A1:I1',
+                    range='A1:K1',
                     valueInputOption='RAW',
                     body=body
                 ).execute()
@@ -136,7 +138,9 @@ class GoogleSheetsManager:
                 workday_data.get('sub_project', ''),
                 workday_data.get('work_description', ''),
                 workday_data.get('workers', ''),
-                workday_data.get('additional_notes', '')
+                workday_data.get('additional_notes', ''),
+                workday_data.get('raw_transcription', ''),  # Set by business layer
+                workday_data.get('status', '⏳ ממתין לאישור')  # Set by business layer
             ]
             
             # Find the next empty row
@@ -155,7 +159,7 @@ class GoogleSheetsManager:
             
             self.service.spreadsheets().values().update(
                 spreadsheetId=SPREADSHEET_ID,
-                range=f'A{next_row}:I{next_row}',
+                range=f'A{next_row}:K{next_row}',
                 valueInputOption='RAW',
                 body=body
             ).execute()

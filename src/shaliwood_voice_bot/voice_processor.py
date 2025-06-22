@@ -8,7 +8,7 @@ import shutil
 from datetime import datetime
 from pathlib import Path
 from openai import OpenAI
-from .config import OPENAI_API_KEY, SAVE_VOICE_MESSAGES, VOICE_SAVE_DIR
+from .config import OPENAI_API_KEY, VOICE_SAVE_DIR
 from .data_extractor import WorkdayDataExtractor
 
 logger = logging.getLogger(__name__)
@@ -35,7 +35,7 @@ class VoiceProcessor:
         Args:
             audio_file_path: Path to the audio file to process
             user_info: Dictionary with user information (for Telegram messages)
-            save_for_testing: Whether to save the voice message for testing
+            save_for_testing: Whether to save the voice message for testing (decided by caller)
             reference_date: Reference date in DD/MM/YYYY format for data extraction
             
         Returns:
@@ -44,8 +44,8 @@ class VoiceProcessor:
         try:
             logger.info(f"Processing audio file: {audio_file_path}")
             
-            # Save voice message for testing if enabled
-            if save_for_testing and SAVE_VOICE_MESSAGES:
+            # Save voice message for testing if enabled (decided by caller)
+            if save_for_testing:
                 self._save_voice_for_testing(audio_file_path, user_info)
             
             # Transcribe audio
@@ -106,7 +106,9 @@ class VoiceProcessor:
             return None
         
         try:
+            # Extract structured data from OpenAI
             workday_data = self.data_extractor.extract_workday_data(text, reference_date)
+            
             logger.info(f"Workday data extracted: {len(workday_data)} fields")
             return workday_data
         except Exception as e:
