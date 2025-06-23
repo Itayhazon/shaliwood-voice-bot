@@ -60,4 +60,11 @@ LOG_LEVEL = get_optional_env('LOG_LEVEL', 'INFO')
 
 # Voice message saving configuration
 SAVE_VOICE_MESSAGES = get_optional_env('SAVE_VOICE_MESSAGES', 'false').lower() == 'true'
-VOICE_SAVE_DIR = get_optional_env('VOICE_SAVE_DIR', 'voice_messages') 
+VOICE_SAVE_DIR = get_optional_env('VOICE_SAVE_DIR', 'voice_messages')
+
+# Webhook configuration
+WEBHOOK_URL = get_optional_env('WEBHOOK_URL')
+WEBHOOK_PORT = int(get_optional_env('WEBHOOK_PORT', '8443'))
+WEBHOOK_LISTEN = get_optional_env('WEBHOOK_LISTEN', '0.0.0.0')
+WEBHOOK_PATH = get_optional_env('WEBHOOK_PATH', '/webhook')
+WEBHOOK_SECRET = get_optional_env('WEBHOOK_SECRET') 

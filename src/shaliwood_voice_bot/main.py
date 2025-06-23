@@ -31,10 +31,10 @@ class ShaliwoodBot:
         self.telegram_bot = TelegramBot(self.voice_processor, self.data_manager, self.response_formatter)
         self.local_processor = LocalProcessor(self.voice_processor, self.data_manager, self.response_formatter)
     
-    def run_telegram_bot(self):
+    def run_telegram_bot(self, use_polling: bool = False):
         """Run the Telegram bot."""
         logger.info("Starting Telegram bot...")
-        self.telegram_bot.run()
+        self.telegram_bot.run(use_polling=use_polling)
     
     def process_local_file(self, audio_file_path: str, transcribe_only: bool = False, output_file: str = None):
         """Process a local audio file."""
@@ -52,6 +52,7 @@ def main():
     parser.add_argument('--no-sheets', action='store_true', help='Skip Google Sheets integration for testing')
     parser.add_argument('--transcribe-only', action='store_true', help='Only transcribe audio, skip data extraction')
     parser.add_argument('--output', '-o', type=str, help='Save transcription to file')
+    parser.add_argument('--polling', action='store_true', help='Use polling mode instead of webhook mode (default)')
     
     args = parser.parse_args()
     
@@ -71,7 +72,7 @@ def main():
                 sys.exit(1)
         else:
             # Run the Telegram bot
-            bot.run_telegram_bot()
+            bot.run_telegram_bot(use_polling=args.polling)
             
     except ConfigError as e:
         logger.error(f"Configuration error: {e}")

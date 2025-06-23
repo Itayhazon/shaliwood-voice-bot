@@ -87,6 +87,13 @@ TELEGRAM_TOKEN=your_telegram_bot_token
 OPENAI_API_KEY=your_openai_api_key
 SPREADSHEET_ID=your_google_spreadsheet_id
 
+# Webhook configuration (required for webhook mode, which is the default)
+WEBHOOK_URL=https://your-domain.com
+WEBHOOK_PORT=8443
+WEBHOOK_LISTEN=0.0.0.0
+WEBHOOK_PATH=/webhook
+WEBHOOK_SECRET=your_webhook_secret_here
+
 # Optional
 LOG_LEVEL=INFO
 GOOGLE_SHEETS_CREDENTIALS_FILE=credentials.json
@@ -117,13 +124,62 @@ VOICE_SAVE_DIR=voice_messages
 
 ### 5. Running the Bot
 
+The bot supports two modes of operation:
+
+#### Webhook Mode (Default)
+Webhook mode is the default and recommended for production use. It requires a publicly accessible HTTPS URL.
+
 ```bash
 # Activate the poetry environment
 poetry shell
 
-# Run the bot
+# Run the bot in webhook mode (default)
 python -m src.shaliwood_voice_bot.main
 ```
+
+**Webhook Requirements:**
+- Public HTTPS URL (e.g., `https://your-domain.com`)
+- Valid SSL certificate
+- Port 8443 (or custom port configured in `.env`)
+- Webhook secret for security
+
+#### Polling Mode
+Polling mode is useful for development and debugging. It doesn't require a public URL.
+
+```bash
+# Activate the poetry environment
+poetry shell
+
+# Run the bot in polling mode
+python -m src.shaliwood_voice_bot.main --polling
+```
+
+**When to use polling mode:**
+- Local development
+- Testing and debugging
+- When you don't have a public HTTPS URL
+- Quick setup for development
+
+### Local Webhook Testing
+
+For testing webhook mode locally, we provide convenient scripts:
+
+```bash
+# Start local webhook testing (recommended)
+./scripts/start_webhook_local.sh
+
+# Stop and clean up
+./scripts/stop_webhook_local.sh
+
+# First-time setup (if needed)
+./scripts/setup_webhook_local.sh
+```
+
+**Requirements for local webhook testing:**
+- ngrok (installed automatically by scripts)
+- Free ngrok account (signup at https://dashboard.ngrok.com/signup)
+
+See `scripts/README.md` for detailed instructions and `scripts/WEBHOOK_SECURITY.md` for security best practices.
 
 ## 🚀 Usage
 
@@ -160,6 +216,18 @@ python -m src.shaliwood_voice_bot.main --file path/to/audio.ogg --transcribe-onl
 **Supported audio formats**: OGG, MP3, WAV, M4A, and other formats supported by OpenAI Whisper.
 
 **Note**: When using `--no-sheets`, data extraction still works and displays the extracted information, but it won't be saved to Google Sheets.
+
+### Running Modes
+
+The bot supports two running modes for Telegram operation:
+
+```bash
+# Webhook mode (default) - requires public HTTPS URL
+python -m src.shaliwood_voice_bot.main
+
+# Polling mode - useful for development and debugging
+python -m src.shaliwood_voice_bot.main --polling
+```
 
 ## 💾 Voice Message Saving
 
@@ -234,6 +302,23 @@ bot = ShaliwoodBot()
    - Verify the bot token is correct
    - Check that the bot is not blocked
    - Ensure the bot has permission to receive voice messages
+
+4. **Webhook Issues:**
+   - Ensure `WEBHOOK_URL` is set to a valid HTTPS URL
+   - Verify the URL is publicly accessible
+   - Check that port 8443 (or your custom port) is open
+   - Ensure your SSL certificate is valid
+   - Try using polling mode (`--polling`) for testing
+
+5. **Polling Mode Issues:**
+   - Use polling mode for local development: `python -m src.shaliwood_voice_bot.main --polling`
+   - Polling mode doesn't require a public URL or SSL certificate
+   - Useful for debugging and development
+
+6. **Local Webhook Testing Issues:**
+   - Use the provided scripts: `./scripts/start_webhook_local.sh`
+   - Free ngrok account required: https://dashboard.ngrok.com/signup
+   - Check `scripts/README.md` for detailed troubleshooting
 
 ### Logs
 

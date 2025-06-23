@@ -7,7 +7,7 @@ import tempfile
 import os
 from telegram import Update
 from telegram.ext import Application, MessageHandler, filters, ContextTypes, CommandHandler
-from .config import TELEGRAM_TOKEN
+from .config import TELEGRAM_TOKEN, WEBHOOK_URL, WEBHOOK_PORT, WEBHOOK_LISTEN, WEBHOOK_PATH, WEBHOOK_SECRET
 from .config import SAVE_VOICE_MESSAGES
 from .voice_processor import VoiceProcessor
 from .data_manager import DataManager
@@ -168,8 +168,8 @@ class TelegramBot:
         """
         await update.message.reply_text(welcome_text)
     
-    def run(self):
-        """Run the Telegram bot."""
+    def run(self, use_polling: bool = False):
+        """Run the Telegram bot in either polling or webhook mode."""
         try:
             # Create application
             self.application = Application.builder().token(TELEGRAM_TOKEN).build()
@@ -177,8 +177,26 @@ class TelegramBot:
             # Setup handlers
             self.setup_handlers()
             
-            logger.info("Starting Shaliwood Voice Bot...")
-            self.application.run_polling()
+            if use_polling:
+                logger.info("Starting Shaliwood Voice Bot in polling mode...")
+                self.application.run_polling()
+            else:
+                # Webhook mode (default)
+                if not WEBHOOK_URL:
+                    logger.error("WEBHOOK_URL environment variable is required for webhook mode")
+                    raise ValueError("WEBHOOK_URL environment variable is required for webhook mode")
+                
+                logger.info(f"Starting Shaliwood Voice Bot in webhook mode on {WEBHOOK_LISTEN}:{WEBHOOK_PORT}")
+                logger.info(f"Webhook URL: {WEBHOOK_URL}{WEBHOOK_PATH}")
+                
+                # Set webhook
+                self.application.run_webhook(
+                    listen=WEBHOOK_LISTEN,
+                    port=WEBHOOK_PORT,
+                    url_path=WEBHOOK_PATH,
+                    webhook_url=f"{WEBHOOK_URL}{WEBHOOK_PATH}",
+                    secret_token=WEBHOOK_SECRET
+                )
             
         except KeyboardInterrupt:
             logger.info("Bot stopped by user")

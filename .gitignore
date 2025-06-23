@@ -22,6 +22,8 @@ wheels/
 
 # Virtual Environment
 .env
+.env.local
+.env.bak
 .venv
 env/
 venv/
