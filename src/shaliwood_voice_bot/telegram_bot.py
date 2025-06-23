@@ -35,12 +35,14 @@ class TelegramBot:
             if not update.message or not update.message.voice:
                 logger.error("Invalid voice message received")
                 return
-            
             # Extract message date for reference
             message_date = update.message.date
             reference_date = message_date.strftime('%d/%m/%Y') if message_date else None
             logger.info(f"Voice message date: {reference_date}")
             
+            # Inform user that recording was received
+            await update.message.reply_text("✅ ההקלטה התקבלה, מעבד...")
+
             # Download voice file
             voice = update.message.voice
             file = await context.bot.get_file(voice.file_id)
