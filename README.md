@@ -15,6 +15,7 @@ A simple Telegram voice bot for Shaliwood construction company that transcribes 
 - 💾 Voice message saving for testing (optional)
 - 🎵 Local audio file processing for testing
 - 🔄 Unified processing pipeline (testing and production use identical code)
+- 🕐 Cron-based batch processing for recent messages
 
 ## 📊 Data Fields
 
@@ -47,9 +48,15 @@ shaliwood-voice-bot/
 │   ├── hebrew_console.py        # Hebrew text formatting for console
 │   ├── telegram_bot.py          # Telegram-specific operations
 │   ├── local_processor.py       # Local file processing for testing
+│   ├── cron_processor.py        # Cron-based batch message processing
 │   ├── config.py                # Configuration management
 │   ├── sheets.py                # Google Sheets integration
 │   └── data_extractor.py        # AI data extraction
+├── scripts/
+│   ├── run_cron_processing.sh   # Cron processing script
+│   └── ...                      # Other utility scripts
+├── cron_processor.py            # Standalone cron processor
+├── CRON_PROCESSING.md           # Cron processing documentation
 ├── pyproject.toml               # Dependencies and project config
 └── README.md                   # This file
 ```
@@ -228,6 +235,61 @@ python -m src.shaliwood_voice_bot.main
 # Polling mode - useful for development and debugging
 python -m src.shaliwood_voice_bot.main --polling
 ```
+
+## 🕐 Cron Processing
+
+The bot includes a cron processing feature that can fetch and process recent Telegram messages in batch. This is useful for:
+
+- **Backup Processing**: Catch any messages that might have been missed by real-time processing
+- **Batch Processing**: Process multiple messages at once for efficiency
+- **Recovery**: Recover from temporary outages or processing failures
+- **Monitoring**: Track message processing statistics and health
+
+### ⚠️ Important Limitations
+
+**CRITICAL**: Due to Telegram Bot API limitations:
+- Only messages from the **last 24 hours** are accessible
+- Messages older than 24 hours are permanently deleted from Telegram's servers
+- This should **NOT** replace real-time webhook/polling processing
+
+### Running Cron Processing
+
+#### Manual Execution
+```bash
+# Using the shell script
+./scripts/run_cron_processing.sh
+
+# Using Poetry
+poetry run python -m src.shaliwood_voice_bot.cron_processor
+
+# Using the standalone script
+poetry run python cron_processor.py
+```
+
+#### System Cron Setup
+```bash
+# Edit crontab
+crontab -e
+
+# Add this line to run daily at 2 AM
+0 2 * * * cd /path/to/shaliwood-voice-bot && poetry run python cron_processor.py >> /var/log/shaliwood-cron.log 2>&1
+```
+
+### Cron Processing Output
+
+The processor provides detailed statistics:
+```json
+{
+  "total_messages": 15,
+  "voice_messages": 8,
+  "processed_voice": 7,
+  "errors": 1,
+  "duration": 330.5,
+  "messages_processed": [...]
+}
+```
+
+For detailed documentation, see [`CRON_PROCESSING.md`](CRON_PROCESSING.md).
 
 ## 💾 Voice Message Saving
 
